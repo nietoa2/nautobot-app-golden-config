@@ -138,6 +138,7 @@ class ConfigComplianceTable(BaseTable):
             .distinct()
         )
         extra_columns = [(feature, ComplianceColumn(verbose_name=feature)) for feature in features]
+        extra_columns.append(("wlc_compliance", ComplianceColumn(verbose_name="RADIUS")))
         kwargs["extra_columns"] = extra_columns
         # Nautobot's BaseTable.configurable_columns() only recognizes columns in self.base_columns,
         # so override the class's base_columns to include our additional columns as configurable.

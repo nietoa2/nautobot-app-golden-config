@@ -185,13 +185,32 @@ class ConfigComplianceListView(generic.ObjectListView):
 
     def alter_queryset(self, request):
         """Build actual runtime queryset as the build time queryset provides no information."""
-        return pivot(
+        from baxter_nautobot_golden_config.models import RadiusServerCompliance
+
+        pivot_qs = pivot(
             self.queryset,
-            ["device", "device__name"],
+            ["device", "device__name", "device__device_role__slug"],
             "rule__feature__name",
             "compliance_int",
             aggregation=Max,
         )
+
+        compliant_wlcs = set(
+            RadiusServerCompliance.objects.filter(compliance=True)
+            .values_list("wlc", flat=True)
+        )
+
+        result = []
+        for row in pivot_qs:
+            row = dict(row)
+            if row.get("device__device_role__slug") == "wlc--access-lan":
+                row["wlc_compliance"] = 1 if row.get("device__name") in compliant_wlcs else 0
+            else:
+                row["wlc_compliance"] = None
+            result.append(row)
+
+        return result
+
 
     def extra_context(self):
         """Boilerplate code to modify before returning data."""
